@@ -28,7 +28,7 @@ Session replay is off by default. Set `VITE_LOGFIRE_SESSION_REPLAY=true` to enab
 3. Run **Slow interaction** and compare the click span with INP.
 4. If replay is enabled, open the replay linked by the shared browser session.
 
-The development server includes a small local checkout endpoint. No external backend is required.
+`/api/checkout` is mocked entirely in the browser with [MSW](https://mswjs.io) — no backend, in development or in the deployed build. `fetch` still makes a real request through the service worker, so Logfire's request instrumentation reports genuine timing, status, and errors.
 
 ## Quality checks
 
@@ -37,6 +37,15 @@ pnpm run ci
 ```
 
 Built with React, Vite, TypeScript, and the official [`@pydantic/logfire-browser`](https://www.npmjs.com/package/@pydantic/logfire-browser) SDK.
+
+## Deploy
+
+This repo deploys to GitHub Pages on every push to `main` (see `.github/workflows/deploy-pages.yml`). The build needs two repository secrets so the deployed bundle carries a real frontend telemetry token:
+
+- `LOGFIRE_BASE_URL` — the `VITE_LOGFIRE_BASE_URL` value for your Logfire region.
+- `LOGFIRE_FRONTEND_TOKEN` — a restricted frontend application token (never a project write token).
+
+Without those secrets set, the deployed demo still runs; it just won't send telemetry, same as a local checkout without `.env.local`.
 
 ## License
 

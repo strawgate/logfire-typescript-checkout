@@ -1,0 +1,55 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time; let an in-flight one finish rather than cancelling it,
+# so a deploy never gets replaced by a half-built artifact.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.22.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/configure-pages@v6
+        id: pages
+      # Without LOGFIRE_BASE_URL/LOGFIRE_FRONTEND_TOKEN secrets set on the repo, the app still
+      # builds and runs -- it just won't send telemetry, same as a local checkout with no
+      # .env.local. The frontend token is restricted to writing this app's telemetry, so baking
+      # it into the public bundle is expected (see the README).
+      - run: pnpm build
+        env:
+          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          VITE_LOGFIRE_BASE_URL: ${{ secrets.LOGFIRE_BASE_URL }}
+          VITE_LOGFIRE_FRONTEND_TOKEN: ${{ secrets.LOGFIRE_FRONTEND_TOKEN }}
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5
+        id: deployment
