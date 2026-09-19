@@ -7,7 +7,9 @@ import { delay, http, HttpResponse } from 'msw'
  * status, and errors exactly as it would against a live endpoint.
  */
 export const handlers = [
-  http.post('/api/checkout', async ({ request }) => {
+  // `*` matches any prefix, so this still matches whether the app is served from the site
+  // root or a subpath (e.g. a GitHub Pages project site).
+  http.post('*/api/checkout', async ({ request }) => {
     await delay(420)
     const url = new URL(request.url)
     if (url.searchParams.get('scenario') === 'failure') {

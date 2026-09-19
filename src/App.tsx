@@ -21,7 +21,10 @@ export default function App() {
       await logfire.span('submit checkout', {
         attributes: { 'checkout.item_count': products.length, 'checkout.incident_mode': incidentMode },
         callback: async () => {
-          const response = await fetch(`/api/checkout?scenario=${incidentMode ? 'failure' : 'success'}`, {
+          // Root-relative would escape the service worker's registration scope on a GitHub
+          // Pages project site (served under a subpath), so the mock would never see it.
+          const checkoutUrl = `${import.meta.env.BASE_URL}api/checkout?scenario=${incidentMode ? 'failure' : 'success'}`
+          const response = await fetch(checkoutUrl, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ email, total }),
