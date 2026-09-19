@@ -1,11 +1,18 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+// `actions/configure-pages`'s `base_path` output (fed in as VITE_BASE_PATH) omits the
+// trailing slash (e.g. `/logfire-typescript-checkout`); Vite's `base` requires one, or
+// asset and service-worker URLs concatenate without a separator.
+function normalizeBase(base: string): string {
+  return base.endsWith('/') ? base : `${base}/`
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   // Set by the GitHub Pages deploy workflow so assets resolve under the project-page path
   // (https://<org>.github.io/<repo>/). Local dev and `vite preview` stay rooted at `/`.
-  base: process.env.VITE_BASE_PATH ?? '/',
+  base: normalizeBase(process.env.VITE_BASE_PATH ?? '/'),
   define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.0.0') },
   plugins: [react()],
   server: { port: 5173 },
